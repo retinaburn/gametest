@@ -1,5 +1,5 @@
 META-INF/
-BOOT-INFO/
+BOOT-INF/
 .idea
 .gradle
 org/
