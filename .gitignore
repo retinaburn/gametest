@@ -4,3 +4,4 @@ BOOT-INF/
 .gradle
 org/
 build/
+**/*.class
