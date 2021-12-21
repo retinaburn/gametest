@@ -5,3 +5,4 @@ BOOT-INF/
 org/
 build/
 **/*.class
+bin/
