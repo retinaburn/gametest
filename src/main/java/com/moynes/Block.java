@@ -2,7 +2,7 @@ package com.moynes;
 
 public class Block {
     V2 center;
-    int halfDim = 50;
+    static int halfDim = 50;
 
     boolean isOnFire = false;
 

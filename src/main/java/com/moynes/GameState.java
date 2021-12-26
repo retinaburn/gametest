@@ -4,8 +4,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 @Data
 @Slf4j
@@ -14,8 +14,12 @@ public class GameState {
     V2 velocity = new V2();
     V2 playerPos = new V2(0, 0);
     V2 acceleration = new V2();
+    double adjustmentOffsetWhenCollides = 0.01;
     List<Block> blockPos = new ArrayList<>();
-    int blockHalfDim = 50;
+    V2 v1 = new V2();
+    V2 v2 = new V2();
+    V2 v3 = new V2();
+    //    int blockHalfDim = 10;
     int playerRadius = 50;
     int playerHeight = 10;
 
@@ -35,22 +39,22 @@ public class GameState {
         int endingX = startingX + 700;
         int endingY = startingY + 500;
         List<Block> result = new ArrayList<>();
-        for (int x = startingX; x <= endingX; x += blockHalfDim * 2) {
-            if ( (upDoor) && (x >= startingX + 300 && x <= startingX + 400)){
+        for (int x = startingX; x <= endingX; x += Block.halfDim * 2) {
+            if ((upDoor) && (x >= startingX + 300 && x <= startingX + 400)) {
             } else {
                 result.add(new Block(new V2(x, endingY)));
             }
-            if ( (downDoor) && (x >= startingX + 300 && x <= startingX + 400)){
+            if ((downDoor) && (x >= startingX + 300 && x <= startingX + 400)) {
             } else {
                 result.add(new Block(new V2(x, startingY)));
             }
         }
-        for (int y = startingY; y <= endingY; y += blockHalfDim * 2) {
-            if ( (leftDoor) && (y >= startingY + 200 && y <= startingY + 300)) {
+        for (int y = startingY; y <= endingY; y += Block.halfDim * 2) {
+            if ((leftDoor) && (y >= startingY + 200 && y <= startingY + 300)) {
             } else {
                 result.add(new Block(new V2(startingX, y)));
             }
-            if ( (rightDoor) && (y >= startingY + 200 && y <= startingY + 300)) {
+            if ((rightDoor) && (y >= startingY + 200 && y <= startingY + 300)) {
             } else {
                 result.add(new Block(endingX, y));
             }
@@ -59,19 +63,19 @@ public class GameState {
     }
 
 
-    private List<Block> buildMap(Map<String, Boolean> map){
+    private List<Block> buildMap(Map<String, Boolean> map) {
         List<Block> blockList = new ArrayList<>();
-        for(int y = -1 * (MAP_SIZE/2); y <= (MAP_SIZE/2); y++){
-            int startingY = -250 + (y*500);
-            for(int x = -1 * (MAP_SIZE/2); x <= (MAP_SIZE/2); x++){
-                int startingX = -350 + (x*700);
+        for (int y = -1 * (MAP_SIZE / 2); y <= (MAP_SIZE / 2); y++) {
+            int startingY = -250 + (y * 500);
+            for (int x = -1 * (MAP_SIZE / 2); x <= (MAP_SIZE / 2); x++) {
+                int startingX = -350 + (x * 700);
                 if (map.get(key(x, y)) == Boolean.TRUE) {
                     blockList.addAll(
                             drawRoom(
-                                    mapGet(map, key(x-1,y)),
-                                    mapGet(map, key(x,y+1)),
-                                    mapGet(map, key(x+1,y)),
-                                    mapGet(map, key(x,y-1)),
+                                    mapGet(map, key(x - 1, y)),
+                                    mapGet(map, key(x, y + 1)),
+                                    mapGet(map, key(x + 1, y)),
+                                    mapGet(map, key(x, y - 1)),
                                     startingX, startingY));
                 }
             }
@@ -79,17 +83,17 @@ public class GameState {
         return blockList;
     }
 
-    private Boolean mapGet(Map<String, Boolean> map, String key){
+    private Boolean mapGet(Map<String, Boolean> map, String key) {
         Boolean result = map.get(key);
         return Objects.requireNonNullElse(result, Boolean.FALSE);
     }
 
 
-    private Map<String, Boolean> initMap(){
+    private Map<String, Boolean> initMap() {
         int x = 0, y = 0;
         Map<String, Boolean> map = new HashMap<>();
-        map.put(key(x,y), true);
-        for(int i=0; i < NUM_ROOMS; i++) {
+        map.put(key(x, y), true);
+        for (int i = 0; i < NUM_ROOMS; i++) {
             int newDirection = (int) (Math.random() * 4);
             switch (newDirection) {
                 case 0 -> x--;
@@ -101,9 +105,9 @@ public class GameState {
         }
         log.debug("Map");
         String mapString = "\n";
-        for (y = MAP_SIZE / 2; y > -1 * (MAP_SIZE/2); y--) {
+        for (y = MAP_SIZE / 2; y > -1 * (MAP_SIZE / 2); y--) {
 
-            for (x = -1 * (MAP_SIZE/2); x <= (MAP_SIZE/2); x++) {
+            for (x = -1 * (MAP_SIZE / 2); x <= (MAP_SIZE / 2); x++) {
                 if (map.get(key(x, y)) == Boolean.TRUE) {
                     mapString = mapString + 1;
                 } else {
@@ -116,7 +120,8 @@ public class GameState {
         return map;
 
     }
-    private String key(int x, int y){
+
+    private String key(int x, int y) {
         return x + "," + y;
     }
 
@@ -205,14 +210,60 @@ public class GameState {
             }
 
             //does newPlayerPos as rectangle intersect with the blocks
-            Rectangle r = new Rectangle((int) block.center.x - blockHalfDim,
-                    (int) block.center.y - blockHalfDim,
-                    blockHalfDim * 2,
-                    blockHalfDim * 2);
+            Rectangle r = new Rectangle((int) block.center.x - Block.halfDim,
+                    (int) block.center.y - Block.halfDim,
+                    Block.halfDim * 2,
+                    Block.halfDim * 2);
 
             if (r.intersects(p)) {
-//                log.debug("Collision!");
+                log.debug("Collision!");
+                v1 = new V2(block.center.getIntX(), block.center.getIntY());
+                v2 = new V2(newPlayerPos.x, newPlayerPos.y);
+
+                v3 = new V2(v2).subtract(v1);
+                log.debug("{},{},{}", v1, v2, v3);
+//
+                log.debug("Initial collision = TRUE");
                 isCollides = true;
+                if (r.contains(rectangleGetBottomRight(p))) {
+                    if (r.contains(rectangleGetTopRight(p))) {
+                        log.debug("Right Side");
+                    } else {
+                        log.debug("Bottom Right");
+                        if (!r.contains(v3.getIntX(), v3.getIntY())) {
+                            log.debug("Found alternate path");
+                            newPlayerPos.x += v3.getIntX() * adjustmentOffsetWhenCollides;
+                            newPlayerPos.y += v3.getIntY() * adjustmentOffsetWhenCollides; //playerPos.y;
+                            isCollides = false;
+                        }
+                    }
+                } else if (r.contains(rectangleGetBottomLeft(p))){
+                    if (r.contains(rectangleGetTopLeft(p))){
+                        log.debug("Left Side");
+                    } else {
+                        log.debug("Bottom Left");
+                        if (!r.contains(v3.getIntX(), v3.getIntY())){
+                            log.debug("Found alternate path");
+                            newPlayerPos.x += v3.getIntX() * adjustmentOffsetWhenCollides;
+                            newPlayerPos.y += v3.getIntY() * adjustmentOffsetWhenCollides; //playerPos.y;
+                            isCollides = false;
+                        }
+                    }
+                } else if (r.contains(rectangleGetTopLeft(p))){
+                    log.debug("Top Left");
+                    log.debug("Found alternate path");
+                    newPlayerPos.x += v3.getIntX() * adjustmentOffsetWhenCollides;
+                    newPlayerPos.y += v3.getIntY() * adjustmentOffsetWhenCollides; //playerPos.y;
+                    isCollides = false;
+                } else if (r.contains(rectangleGetTopRight(p))){
+                    log.debug("Top Right");
+                    log.debug("Found alternate path");
+                    newPlayerPos.x += v3.getIntX() * adjustmentOffsetWhenCollides;
+                    newPlayerPos.y += v3.getIntY() * adjustmentOffsetWhenCollides; //playerPos.y;
+                    isCollides = false;
+                }
+
+//                }
                 break;
             }
 
@@ -233,5 +284,20 @@ public class GameState {
 //        if (animateAnger)
 //            hasChange = true;
         return true;
+    }
+
+    public Point rectangleGetBottomRight(Rectangle r) {
+        return new Point(r.x + r.width, r.y);
+    }
+
+    public Point rectangleGetTopRight(Rectangle r) {
+        return new Point(r.x + r.width, r.y + r.height);
+    }
+
+    public Point rectangleGetBottomLeft(Rectangle r){
+        return new Point(r.x, r.y);
+    }
+    public Point rectangleGetTopLeft(Rectangle r){
+        return new Point(r.x, r.y+r.height);
     }
 }

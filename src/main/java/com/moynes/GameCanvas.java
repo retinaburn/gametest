@@ -9,7 +9,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.Random;
 
 @Slf4j
 public class GameCanvas extends JPanel {
@@ -111,7 +110,7 @@ public class GameCanvas extends JPanel {
             Color color = Color.GRAY;
             if (block.isOnFire)
                 color = Color.RED;
-            drawSquare(g, newBlockPos, block.halfDim, color);
+            drawSquare(g, newBlockPos, Block.halfDim, color);
         }
 
         if (gameState.animateAnger) {
@@ -133,11 +132,44 @@ public class GameCanvas extends JPanel {
         drawRightAlignedText(g, "V: " + gameState.velocity.toString(),60);
         drawRightAlignedText(g, "A: " + gameState.acceleration.toString(), 80);
 
+        drawVector(g, windowOrigin);
+
+
         if (gameState.animateParticles) {
             for (Particle particle : particles) {
                 particle.render(g);
             }
         }
+    }
+
+    private void drawVector(Graphics g, V2 windowOrigin) {
+        V2 v1 = (new V2(gameState.v1)).add(windowOrigin);
+        v1 = mapToCenter(v1);
+        V2 v2 = (new V2(gameState.v2)).add(windowOrigin);
+        v2 = mapToCenter(v2);
+        V2 v3 = gameState.v3;
+        v3 = (new V2(gameState.v3)).add(windowOrigin);
+        v3 = mapToCenter(v3);
+
+        g.setColor(Color.GREEN);
+        g.fillOval(v1.getIntX()-5,v1.getIntY()-5, 10, 10);
+        g.setColor(Color.BLUE);
+        g.fillOval(v2.getIntX()-5, v2.getIntY()-5, 10, 10);
+        g.setColor(Color.ORANGE);
+        g.drawLine(v2.getIntX(), v2.getIntY(), v1.getIntX(), v1.getIntY());
+
+        g.setColor(Color.CYAN);
+        //g.fillOval(v3.getIntX()-5, v3.getIntY()-5, 10, 10);
+
+        V2 playerToBlockCenterCollision = new V2(v2).subtract(v1);
+        playerToBlockCenterCollision = mapToCenter(playerToBlockCenterCollision);
+        g.fillOval(playerToBlockCenterCollision.getIntX()-5, playerToBlockCenterCollision.getIntY()-5, 10, 10);
+
+        g.setColor(Color.YELLOW);
+        drawRightAlignedText(g, "V3: " + playerToBlockCenterCollision, 120);
+
+
+
     }
 
     private void drawFireImpact(Graphics g) {
@@ -279,6 +311,12 @@ public class GameCanvas extends JPanel {
         g.setColor(Color.BLACK);
         g.drawRect(recenterX - radius, recenterY - radius, radius * 2, radius * 2);
         g.setColor(orig);
+    }
+
+    V2 mapToCenter(V2 v){
+        return new V2(
+        (int) (this.getMaximumSize().width / 2 + v.x),
+        (int) (this.getMaximumSize().height / 2 - v.y));
     }
 
     V2 mapToWindow(V2 v) {
