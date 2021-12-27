@@ -59,6 +59,9 @@ public class V2 {
         y += v.y;
         return this;
     }
+    public boolean equals(V2 v){
+        return x==v.x && y==v.y;
+    }
 
     public String toString(){
         return "("+x+","+y+")";

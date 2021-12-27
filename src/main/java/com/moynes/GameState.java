@@ -202,6 +202,10 @@ public class GameState {
                 100);
         diagramRects.add(fire);
 
+        if (countCollisions(p) >= 2){
+            return true;
+        }
+
         for (Block block : blockPos) {
             //if the block was on fire last time, lets make it not on fire
             if (block.isOnFire) {
@@ -214,6 +218,7 @@ public class GameState {
                     (int) block.center.y - Block.halfDim,
                     Block.halfDim * 2,
                     Block.halfDim * 2);
+
 
             if (r.intersects(p)) {
                 log.debug("Collision!");
@@ -284,6 +289,25 @@ public class GameState {
 //        if (animateAnger)
 //            hasChange = true;
         return true;
+    }
+
+    public int countCollisions(Rectangle p){
+        int result = 0;
+        V2 collisionBlock = new V2();
+        for (Block block: blockPos){
+            Rectangle r = new Rectangle((int) block.center.x - Block.halfDim,
+                    (int) block.center.y - Block.halfDim,
+                    Block.halfDim * 2,
+                    Block.halfDim * 2);
+            if (p.intersects(r) && !collisionBlock.equals(block.center)){
+                result++;
+                if (result == 1){
+                    collisionBlock = new V2(block.center);
+                }
+                //log.debug("Num Collisions = {}, block = {}", result, block.center);
+            }
+        }
+        return result;
     }
 
     public Point rectangleGetBottomRight(Rectangle r) {
